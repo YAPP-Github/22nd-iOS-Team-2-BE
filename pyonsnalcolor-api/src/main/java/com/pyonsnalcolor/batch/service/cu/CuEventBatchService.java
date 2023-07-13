@@ -1,6 +1,7 @@
 package com.pyonsnalcolor.batch.service.cu;
 
 import com.pyonsnalcolor.batch.service.EventBatchService;
+import com.pyonsnalcolor.exception.PyonsnalcolorBatchException;
 import com.pyonsnalcolor.product.entity.BaseEventProduct;
 import com.pyonsnalcolor.product.enumtype.Category;
 import com.pyonsnalcolor.product.enumtype.EventType;
@@ -15,11 +16,14 @@ import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.pyonsnalcolor.exception.model.BatchErrorCode.*;
 import static com.pyonsnalcolor.product.entity.UUIDGenerator.generateId;
 
 @Service("CuEvent")
@@ -40,10 +44,15 @@ public class CuEventBatchService extends EventBatchService implements CuDescript
 
         try {
             return getProducts();
+        } catch (IllegalArgumentException e) {
+            throw new PyonsnalcolorBatchException(INVALID_ACCESS, e);
+        } catch (SocketTimeoutException e) {
+            throw new PyonsnalcolorBatchException(TIME_OUT, e);
+        } catch (IOException e) {
+            throw new PyonsnalcolorBatchException(IO_EXCEPTION, e);
         } catch (Exception e) {
-            log.error("CU 이벤트 상품 조회하는 데 실패했습니다.", e);
+            throw new PyonsnalcolorBatchException(BATCH_UNAVAILABLE, e);
         }
-        return null; // 이후에 에러 처리 관련 수정 - getAllProducts() 호출하는 쪽에 throw
     }
 
     private List<BaseEventProduct> getProducts() throws Exception {
@@ -81,8 +90,14 @@ public class CuEventBatchService extends EventBatchService implements CuDescript
         String description = null;
         try {
             description = getDescription(element, "event");
+        } catch (IllegalArgumentException e) {
+            throw new PyonsnalcolorBatchException(INVALID_ACCESS, e);
+        } catch (SocketTimeoutException e) {
+            throw new PyonsnalcolorBatchException(TIME_OUT, e);
+        } catch (IOException e) {
+            throw new PyonsnalcolorBatchException(IO_EXCEPTION, e);
         } catch (Exception e) {
-            log.error("CU 이벤트 상품의 상세 정보를 조회할 수 없습니다.", e);
+            throw new PyonsnalcolorBatchException(BATCH_UNAVAILABLE, e);
         }
         Category category = Category.matchCategoryByProductName(name);
         Tag tag = Tag.findTag(name);
@@ -116,6 +131,7 @@ public class CuEventBatchService extends EventBatchService implements CuDescript
         if (eventTypeTag.equals("2+1")) {
             return EventType.TWO_TO_ONE;
         }
-        throw new IllegalArgumentException("CU 이벤트 타입을 찾을 수 없습니다.");
+        throw new PyonsnalcolorBatchException(INVALID_PRODUCT_TYPE,
+                new IllegalArgumentException("CU 이벤트 타입이 기존 엔티티와 다릅니다."));
     }
 }

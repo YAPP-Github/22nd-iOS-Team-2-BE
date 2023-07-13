@@ -39,6 +39,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-batch:2.7.12'
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign:3.1.7'
     testImplementation 'org.springframework.batch:spring-batch-test:4.3.8'
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+    implementation("net.gpedro.integrations.slack:slack-webhook:1.4.0")
 
     // FCM
     implementation 'com.google.firebase:firebase-admin:9.2.0'

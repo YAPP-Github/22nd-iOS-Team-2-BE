@@ -1,5 +1,6 @@
 package com.pyonsnalcolor.batch.service.cu;
 
+import com.pyonsnalcolor.exception.PyonsnalcolorBatchException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -8,6 +9,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 import java.net.SocketTimeoutException;
+
+import static com.pyonsnalcolor.exception.model.BatchErrorCode.*;
+import static com.pyonsnalcolor.exception.model.BatchErrorCode.BATCH_UNAVAILABLE;
 
 public interface CuDescriptionBatch {
 
@@ -28,11 +32,13 @@ public interface CuDescriptionBatch {
             Elements elements = doc.select("ul.prodExplain li");
             return elements.text();
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("URL 주소가 유효하지 않습니다.");
+            throw new PyonsnalcolorBatchException(INVALID_ACCESS, e);
         } catch (SocketTimeoutException e) {
-            throw new SocketTimeoutException("연결 시간이 초과하였습니다.");
+            throw new PyonsnalcolorBatchException(TIME_OUT, e);
         } catch (IOException e) {
-            throw new IOException("연결에 실패하였습니다.");
+            throw new PyonsnalcolorBatchException(IO_EXCEPTION, e);
+        } catch (Exception e) {
+            throw new PyonsnalcolorBatchException(BATCH_UNAVAILABLE, e);
         }
     }
 

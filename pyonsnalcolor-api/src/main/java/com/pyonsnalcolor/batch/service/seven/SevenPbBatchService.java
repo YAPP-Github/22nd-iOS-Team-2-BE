@@ -1,6 +1,8 @@
 package com.pyonsnalcolor.batch.service.seven;
 
 import com.pyonsnalcolor.batch.service.PbBatchService;
+import com.pyonsnalcolor.exception.PyonsnalcolorBatchException;
+import com.pyonsnalcolor.exception.model.BatchErrorCode;
 import com.pyonsnalcolor.product.entity.BasePbProduct;
 import com.pyonsnalcolor.product.enumtype.Category;
 import com.pyonsnalcolor.product.enumtype.StoreType;
@@ -15,11 +17,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.pyonsnalcolor.exception.model.BatchErrorCode.*;
+import static com.pyonsnalcolor.exception.model.BatchErrorCode.BATCH_UNAVAILABLE;
 import static com.pyonsnalcolor.product.entity.UUIDGenerator.generateId;
 
 @Service("SevenPb")
@@ -37,13 +42,18 @@ public class SevenPbBatchService extends PbBatchService {
     }
 
     @Override
-    protected List<BasePbProduct> getAllProducts() {
+    protected List<BasePbProduct> getAllProducts(){
         try {
             return getProducts();
+        } catch (IllegalArgumentException e) {
+            throw new PyonsnalcolorBatchException(INVALID_ACCESS, e);
+        } catch (SocketTimeoutException e) {
+            throw new PyonsnalcolorBatchException(TIME_OUT, e);
+        } catch (IOException e) {
+            throw new PyonsnalcolorBatchException(IO_EXCEPTION, e);
         } catch (Exception e) {
-            log.error("세븐일레븐 PB 상품 조회하는 데 실패했습니다.", e);
+            throw new PyonsnalcolorBatchException(BATCH_UNAVAILABLE, e);
         }
-        return null; // 이후에 에러 처리 관련 수정 - getAllProducts() 호출하는 쪽에 throw
     }
 
     private List<BasePbProduct> getProducts() throws IOException {

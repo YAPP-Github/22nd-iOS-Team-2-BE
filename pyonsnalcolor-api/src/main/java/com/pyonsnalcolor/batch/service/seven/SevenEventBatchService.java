@@ -1,6 +1,7 @@
 package com.pyonsnalcolor.batch.service.seven;
 
 import com.pyonsnalcolor.batch.service.EventBatchService;
+import com.pyonsnalcolor.exception.PyonsnalcolorBatchException;
 import com.pyonsnalcolor.product.entity.BaseEventProduct;
 import com.pyonsnalcolor.product.repository.EventProductRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -11,10 +12,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+
+import static com.pyonsnalcolor.exception.model.BatchErrorCode.*;
+import static com.pyonsnalcolor.exception.model.BatchErrorCode.BATCH_UNAVAILABLE;
 
 @Service("SevenEvent")
 @Slf4j
@@ -42,10 +47,15 @@ public class SevenEventBatchService extends EventBatchService {
     private List<BaseEventProduct> getProductsAllTab(SevenEventTab sevenEventTab) {
         try {
             return getProductsByTab(sevenEventTab);
-        } catch (IOException ioException) {
-            log.error("세븐일레븐 이벤트 {}탭의 상품 조회하는 데 실패했습니다.", sevenEventTab, ioException);
+        } catch (IllegalArgumentException e) {
+            throw new PyonsnalcolorBatchException(INVALID_ACCESS, e);
+        } catch (SocketTimeoutException e) {
+            throw new PyonsnalcolorBatchException(TIME_OUT, e);
+        } catch (IOException e) {
+            throw new PyonsnalcolorBatchException(IO_EXCEPTION, e);
+        } catch (Exception e) {
+            throw new PyonsnalcolorBatchException(BATCH_UNAVAILABLE, e);
         }
-        return null;
     }
 
     public List<BaseEventProduct> getProductsByTab(SevenEventTab sevenEventTab) throws IOException {

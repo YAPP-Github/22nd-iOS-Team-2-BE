@@ -1,5 +1,7 @@
 package com.pyonsnalcolor.batch.service.seven;
 
+import com.pyonsnalcolor.exception.PyonsnalcolorBatchException;
+import com.pyonsnalcolor.exception.model.BatchErrorCode;
 import com.pyonsnalcolor.product.entity.BaseEventProduct;
 import com.pyonsnalcolor.product.enumtype.Category;
 import com.pyonsnalcolor.product.enumtype.EventType;
@@ -13,12 +15,15 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import static com.pyonsnalcolor.exception.model.BatchErrorCode.*;
 import static com.pyonsnalcolor.product.entity.UUIDGenerator.generateId;
 
 @Slf4j
@@ -137,9 +142,14 @@ public enum SevenEventTab {
             Document doc = Jsoup.connect(originPriceUrl).timeout(TIMEOUT).get();
             Elements elements = doc.select("div.cont_top span.product_price del");
             return elements.text().replace(" >", "");
+        } catch (IllegalArgumentException e) {
+            throw new PyonsnalcolorBatchException(INVALID_ACCESS, e);
+        } catch (SocketTimeoutException e) {
+            throw new PyonsnalcolorBatchException(TIME_OUT, e);
+        } catch (IOException e) {
+            throw new PyonsnalcolorBatchException(IO_EXCEPTION, e);
         } catch (Exception e) {
-            log.error("세븐일레븐 할인 상품의 상세 페이지로 이동할 수 없습니다.", e);
+            throw new PyonsnalcolorBatchException(BATCH_UNAVAILABLE, e);
         }
-        return null;
     }
 }
